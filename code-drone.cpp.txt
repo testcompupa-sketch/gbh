@@ -1,0 +1,145 @@
+//C++ for drone and NEO LED//
+/*
+A1-2 : control up and down
+A3-5 : contrl forward back left and right
+A0 : not used (for more control or sensor)
+*/
+#include <Adafruit_NeoPixel.h>
+#define PIN 7    
+#define NUMPIXELS     4 
+Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
+//RGB LED set 0//
+int r = 0;
+int g = 0;
+int b = 0;
+//pin in a1 a2 a3 a4 a5//
+int a1 = 0;
+int a2 = 0;
+int a3 = 0;
+int a4 = 0;
+int a5 = 0;
+
+void setup()
+{
+  // NEO LED//
+  pixels.begin();
+  pixels.setBrightness(100);
+  
+  // pin output//
+  pinMode(3, OUTPUT);
+  pinMode(5, OUTPUT);
+  pinMode(6, OUTPUT);
+  pinMode(9, OUTPUT);
+  
+  // pin input//
+  pinMode(A1, INPUT);
+  pinMode(A2, INPUT);
+  pinMode(A3, INPUT);
+  pinMode(A4, INPUT);
+  pinMode(A5, INPUT);
+  
+  // pin analog write (output)//
+  analogWrite(3, 0);
+  analogWrite(5, 0);
+  analogWrite(6, 0);
+  analogWrite(9, 0);
+}
+
+void loop()
+{
+  a1 = 0;
+  a2 = 0;
+  a3 = 0;
+  a4 = 0;
+  a5 = 0;
+
+  // read code 000 100 101 110 111//
+  if (digitalRead(A3) == HIGH){
+    a3 = 1;
+  }
+  if (digitalRead(A4) == HIGH){
+    a4 = 1;
+  }
+  if (digitalRead(A5) == HIGH){
+    a5 = 1;
+  }
+  if (digitalRead(A1) == HIGH){
+    a1 = 1;
+  }
+  if (digitalRead(A2) == HIGH){
+    a2 = 1;
+  }
+  // motor speed control//
+  if (a3 == 1 && (a4 == 1 && a5 == 0)) {
+    analogWrite(3, 50);
+    analogWrite(5, 80);
+    analogWrite(6, 50);
+    analogWrite(9, 80);
+    // left//
+  }
+  else if (a3 == 1 && (a4 == 0 && a5 == 1)) {
+    analogWrite(3, 80);
+    analogWrite(5, 80);
+    analogWrite(6, 50);
+    analogWrite(9, 50);
+    // down//
+  }  
+  else if (a3 == 1 && (a4 == 0 && a5 == 0)) {
+    analogWrite(3, 50);
+    analogWrite(5, 50);
+    analogWrite(6, 80);
+    analogWrite(9, 80);
+    // up//
+  }
+  else if (a3 == 1 && (a4 == 1 && a5 == 1)) {
+    analogWrite(3, 80);
+    analogWrite(5, 50);
+    analogWrite(6, 80);
+    analogWrite(9, 50);
+    // right//
+  }else if (a1 == 0 && (a2 == 1)){
+    analogWrite(3, 100);
+    analogWrite(5, 100);
+    analogWrite(6, 100);
+    analogWrite(9, 100);
+  }else if (a1 == 1 && (a2 == 0)){
+    analogWrite(3, 60);
+    analogWrite(5, 60);
+    analogWrite(6, 60);
+    analogWrite(9, 60);
+  }else {
+    analogWrite(3, 80);
+    analogWrite(5, 80);
+    analogWrite(6, 80);
+    analogWrite(9, 80);
+  }
+  colorpic();
+  // reset and delay for stable //
+  delay(10);
+}
+void colorpic() {
+  static uint16_t j = 0;
+  for (int i = 0; i < NUMPIXELS; i++) {
+    //calculate RGB for RGB run
+    pixels.setPixelColor(i, Wheel(((i * 256 / NUMPIXELS) + j) & 255));
+  }
+  pixels.show();
+  j++;
+  if (j >= 256) {
+    j = 0;
+  }
+}
+
+//RGB Color Wheel//
+uint32_t Wheel(byte WheelPos) {
+  WheelPos = 255 - WheelPos;
+  if (WheelPos < 85) {
+    return pixels.Color(255 - WheelPos * 3, 0, WheelPos * 3);
+  }
+  if (WheelPos < 170) {
+    WheelPos -= 85;
+    return pixels.Color(0, WheelPos * 3, 255 - WheelPos * 3);
+  }
+  WheelPos -= 170;
+  return pixels.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
+}
