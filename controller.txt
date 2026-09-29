@@ -1,0 +1,71 @@
+import serial
+import time
+import keyboard
+
+# Configure COM_PORT to match your paired Bluetooth Outgoing COM port (e.g., 'COM4' or '/dev/rfcomm0')
+COM_PORT = 'COM4' 
+BAUD_RATE = 115200
+
+try:
+    bt = serial.Serial(COM_PORT, BAUD_RATE, timeout=0.1)
+    print(f"Connected to Drone on {COM_PORT}")
+except Exception as e:
+    print(f"Error connecting: {e}")
+    exit()
+
+throttle = 1000
+roll = 0.0
+pitch = 0.0
+yaw = 0.0
+is_armed = False
+
+print("\n--- KEYBOARD CONTROLLER MAP ---")
+print("Spacebar  : Toggle ARM / DISARM")
+print("W / S     : Throttle Up / Down")
+print("Up / Down : Pitch Forward / Backward")
+print("Left/Right: Roll Left / Right")
+print("Q / E     : Yaw Left / Right")
+print("ESC       : Exit Program\n")
+
+while True:
+    if keyboard.is_pressed('esc'):
+        bt.write(b"DISARM\n")
+        print("Exiting controller software...")
+        break
+
+    # Toggle ARM/DISARM status
+    if keyboard.is_pressed('space'):
+        is_armed = not is_armed
+        cmd = "ARM\n" if is_armed else "DISARM\n"
+        bt.write(cmd.encode())
+        print(f"Status: {'ARMED' if is_armed else 'DISARMED'}")
+        time.sleep(0.3)
+
+    if is_armed:
+        # Throttle control logic
+        if keyboard.is_pressed('w'):
+            throttle = min(1800, throttle + 5)
+        elif keyboard.is_pressed('s'):
+            throttle = max(1000, throttle - 5)
+
+        # Pitch control logic
+        if keyboard.is_pressed('up'):
+            pitch = 10.0
+        elif keyboard.is_pressed('down'):
+            pitch = -10.0
+        else:
+            pitch = 0.0
+
+        # Roll control logic
+        if keyboard.is_pressed('right'):
+            roll = 10.0
+        elif keyboard.is_pressed('left'):
+            roll = -10.0
+        else:
+            roll = 0.0
+
+        # Format string and transmit via Serial: "Throttle,Roll,Pitch,Yaw\n"
+        data_str = f"{throttle},{roll},{pitch},{yaw}\n"
+        bt.write(data_str.encode())
+
+    time.sleep(0.05)
